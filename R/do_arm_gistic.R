@@ -79,7 +79,7 @@ do_arm_gistic <- function(arm, direc, telcent, mode, ci,qval_thres, telcent_thre
   df$percent = as.numeric(df$percent)
   
   df1 <-df
-  df1 <- filter_big_small(df1)
+  df1 <- filter_big_small(df1, telcent_thres = telcent_thres)
   
   ## if there's a coverage desert, spread the breakpoints until the next PROBE.
   tabs <- tablify(df1,chromosome,pq,telcent,T)
