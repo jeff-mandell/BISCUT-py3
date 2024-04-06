@@ -66,6 +66,10 @@ do_arm_gistic <- function(arm, direc, telcent, mode, ci,qval_thres, telcent_thre
   }
   probes <- read.table(probefilename,sep='\t',header=T,stringsAsFactors = F,fill=T)
   probes <- filter_big_small(probes, telcent_thres = telcent_thres)
+  
+  if(nrow(probes) == 0) {
+    return(list(list(), list())) # return empty if no segments are present, as there can't be any peaks
+  }
   tabprobes <- tablify(probes,chromosome,pq,telcent,F)
   probelist <- as.numeric(as.character(tabprobes$Var1))
   
