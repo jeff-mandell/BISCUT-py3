@@ -151,6 +151,8 @@ def get_percent_start_end(aneu, arm, coord, segdfloc,ncutoff,telcent,integer):
 
     #UNTOGGLE THIS!!!
     if not integer:
+        startpos = psedf['start']
+        endpos = psedf['end']
         psedf['start']=psedf['start'].apply(lambda x: min(1,max(0.0,(x-coord[0])/len_arm)))
         psedf['end']=psedf['end'].apply(lambda x: max(0,min(1.0,(x-coord[0])/len_arm)))
         psedf['percent']=psedf.index.map(lambda x: (psedf.loc[x,'percent']-(coord[2]-coord[1]-1))/len_arm if psedf.loc[x,'start']<=coord[1] and len(coord)==4 and psedf.loc[x,'end']>=coord[2] else psedf.loc[x,'percent']/len_arm)
@@ -164,6 +166,9 @@ def get_percent_start_end(aneu, arm, coord, segdfloc,ncutoff,telcent,integer):
             psedf = psedf.drop(['start','end'],axis=1)
             psedf['start'] = newstart
             psedf['end'] = newend
+        
+        psedf['startpos'] = startpos
+        psedf['endpos'] = endpos
 
 
     #UNTOGGLE THIS!!!

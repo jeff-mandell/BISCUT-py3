@@ -39,9 +39,9 @@ load_breakpoint_files = function(breakpoint_file_dir, telcent_thres = 1e-3) {
     output <- d
   }
   breakpoints <- concat_background(breakpoint_files)
-  tel <- breakpoints[breakpoints$tel_cent=='tel', c(1:5)]
+  tel <- breakpoints[breakpoints$tel_cent=='tel', c('Sample', 'percent', 'start', 'end', 'amp_del')]
   tel <- filter_big_small(tel, telcent_thres = telcent_thres)
-  cent <- breakpoints[breakpoints$tel_cent=='cent', c(1:5)]
+  cent <- breakpoints[breakpoints$tel_cent=='cent', c('Sample', 'percent', 'start', 'end', 'amp_del')]
   cent <- filter_big_small(cent, telcent_thres = telcent_thres)
   return(list(tel = tel, cent = cent))
 }
