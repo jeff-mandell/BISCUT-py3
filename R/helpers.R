@@ -68,11 +68,14 @@ get_chromosome_coordinates = function(genome = 'hg19') {
   return(validate_chr_coordinates(default_abslocs))
 }
 
-#' Reads and validates chromosome coordinates
+#' Read and validate chromosome coordinate data
 #' 
-#' Takes either a file path or a data.frame, validates the data.frame, and returns a version with
-#' just the necessary columns.
+#' Takes either a file path or a data.frame and validates required columns: chromosome_info, size,
+#' p_start, p_end, q_start, q_end, centromere. All other columns are removed, and then some derivative
+#' columns used in some plotting functions are produced from the required columns.
+#' 
 #' @param chromosome_coordinates File path or data.frame.
+#' @export
 validate_chr_coordinates = function(chromosome_coordinates) {
   if(is.character(chromosome_coordinates)) {
     if(length(chromosome_coordinates) != 1) {

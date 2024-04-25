@@ -2,7 +2,7 @@
 % Please edit documentation in R/helpers.R
 \name{validate_chr_coordinates}
 \alias{validate_chr_coordinates}
-\title{Reads and validates chromosome coordinates}
+\title{Read and validate chromosome coordinate data}
 \usage{
 validate_chr_coordinates(chromosome_coordinates)
 }
@@ -10,6 +10,7 @@ validate_chr_coordinates(chromosome_coordinates)
 \item{chromosome_coordinates}{File path or data.frame.}
 }
 \description{
-Takes either a file path or a data.frame, validates the data.frame, and returns a version with
-just the necessary columns.
+Takes either a file path or a data.frame and validates required columns: chromosome_info, size,
+p_start, p_end, q_start, q_end, centromere. All other columns are removed, and then some derivative
+columns used in some plotting functions are produced from the required columns.
 }
