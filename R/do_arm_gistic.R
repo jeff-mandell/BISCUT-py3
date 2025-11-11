@@ -2,7 +2,7 @@
 #' 
 #' @keywords internal
 do_arm_gistic <- function(arm, direc, telcent, mode, ci,qval_thres, telcent_thres, breakpoint_file_dir, n,
-                          emp_bg, results_dir, abslocs, genelocs, seed = NULL) {
+                          emp_bg, abslocs, genelocs, seed = NULL) {
   if(! is.null(seed)) {
     set.seed(seed)
   }
@@ -126,7 +126,7 @@ do_arm_gistic <- function(arm, direc, telcent, mode, ci,qval_thres, telcent_thre
     #   append results to peak list
     # Return peak list (and also list of plots)
     # 
-    
+
     # Will stop early when insufficient samples
     if(length(rownames(df1))<4) {
       return(NULL)

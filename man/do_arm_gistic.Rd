@@ -15,7 +15,6 @@ do_arm_gistic(
   breakpoint_file_dir,
   n,
   emp_bg,
-  results_dir,
   abslocs,
   genelocs,
   seed = NULL
