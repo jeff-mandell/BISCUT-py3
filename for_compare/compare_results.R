@@ -16,12 +16,12 @@ original = original[, peak_id := paste(arm, direction, telcent, code, iter, sep 
 segment_file = 'for_compare/PANCAN_ISAR.seg.txt.gz'
 
 # You may need to adjust cores depending on your system
-make_breakpoint_files(segment_file = segment_file, output_dir = 'for_compare/breakpoint_for_compare', cores = 8)
-results = do_biscut(breakpoint_file_dir = 'for_compare/breakpoint_for_compare/', 
-                    results_dir = 'for_compare/biscut_output', cores = 8, seed = 999)
+bp = calculate_breakpoints(segment_file = segment_file, cores = 8)
+results = do_biscut(breakpoints = bp, cores = 8, seed = 999)
 
 original_peaks = unique(original[, .(peak_id, code, iter, direction, telcent, negpos, combined_sig)])
-new_peaks = results$peaks[, .(peak_id, code, iter, direction, telcent, negpos, combined_sig)]
+new_peaks = results$peaks[, .(peak_id, code, iter, direction, telcent, negpos, combined_sig, search_lowlim, search_highlim,
+                              Peak.Start.1, Peak.End.1, log10_ksby)]
 
 
 all_peak_id = unique(c(original_peaks$peak_id, new_peaks$peak_id))
@@ -30,15 +30,15 @@ peak_compare = data.table(peak_id = all_peak_id,
                           in_new = all_peak_id %in% new_peaks$peak_id)
 
 
-# 83.4% of the peaks in the original results match peaks found in the new run.
+# 92.7% of the peaks in the original results match peaks found in the new run.
 peak_compare[in_original == T, mean(in_new)]
-# [1] 0.8341969
+# [1] 0.9274611
 
 table(peak_compare[, .(in_original, in_new)])
 #             in_new
 # in_original FALSE TRUE
-# FALSE       0   70
-# TRUE        32  161
+# FALSE       0   41
+# TRUE        14  179
 
 # Considering only 1st iteration peaks, 97.9% of original peaks are reproduced in the new results.
 peak_compare[, iter := sub('.*_', '', peak_id)]
@@ -50,7 +50,7 @@ first_iter_compare[in_original == T, mean(in_new)]
 table(first_iter_compare[, .(in_original, in_new)])
 #             in_new
 # in_original FALSE TRUE
-# FALSE       0   20
+# FALSE       0   7
 # TRUE        2   93
 
 original_gene_results = original[, .(gene = Gene, negpos, ampdel = direction, telcent)]
@@ -59,17 +59,17 @@ orig_for_compare = original_gene_results[gene %in% orig_single_hit]
 
 curr_gene_results = results$genes_by_peak[, .(peak_id, gene = Gene)]
 curr_gene_results[results$peaks, let(negpos = negpos, ampdel = direction, telcent = telcent), on = 'peak_id']
-curr_single_hit = curr_gene_results[ ,.N, by = names(curr)][N == 1, gene]
+curr_single_hit = curr_gene_results[ ,.N, by = names(curr_gene_results)][N == 1, gene]
 curr_for_compare= curr_gene_results[gene %in% curr_single_hit]
 
-# Compare the 4,921 gene-ampdel-telcent peaks that are shared between the runs.
+# Compare the 8,531 gene-ampdel-telcent peaks that are shared between the runs.
 gene_compare = merge.data.table(orig_for_compare, curr_for_compare, suffixes = c('.original', '.new'), 
                                 by = c('gene', 'ampdel', 'telcent'), all = F)
-stopfifnot(gene_compare[, .N] == 4921)
+stopifnot(gene_compare[, .N] == 8531)
 
-## We get high agreement here.
+## We get 100% agreement!
 gene_compare[, mean(negpos.original == negpos.new)]
-# [1] 0.9699248
+# [1] 1
 
 
 
