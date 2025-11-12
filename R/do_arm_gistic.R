@@ -185,9 +185,9 @@ do_arm_gistic <- function(arm, direc, telcent, mode, ci,qval_thres, telcent_thre
           return(quantile(-Inf,c((1-ci)/2, 1-((1-ci)/2))))
         }
         unif_boot <- runif(min=pbeta(low,alpha,beta), max = pbeta(high,alpha,beta), n = num_events * n)
-        extremes <- numeric(num_events)
-        for (i in seq_len(num_events)) {
-          extremes[i] <- min_or_max(unif_boot[((i - 1) * n + 1):(i*n)])
+        extremes <- numeric(n)
+        for (i in seq_len(n)) {
+          extremes[i] <- min_or_max(unif_boot[((i - 1) * num_events + 1):(i*num_events)])
         }
         gevdist = qbeta(extremes, alpha, beta)
         return(quantile(gevdist,c((1-ci)/2, 1-((1-ci)/2))))
