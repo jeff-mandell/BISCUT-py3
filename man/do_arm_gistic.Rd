@@ -12,7 +12,7 @@ do_arm_gistic(
   ci,
   qval_thres,
   telcent_thres,
-  breakpoint_file_dir,
+  probes,
   n,
   emp_bg,
   abslocs,

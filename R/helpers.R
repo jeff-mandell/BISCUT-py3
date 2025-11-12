@@ -23,28 +23,18 @@ load_breakpoint_files = function(breakpoint_file_dir, telcent_thres = 1e-3) {
   if(! dir.exists(breakpoint_file_dir)) {
     stop('breakpoint_file_dir ', breakpoint_file_dir, 'could not be found.')
   }
-  breakpoint_files <- list.files(path = breakpoint_file_dir, pattern = '_(amp|del)_(cent|tel).txt$',
+  breakpoint_files = list.files(path = breakpoint_file_dir, pattern = '_(amp|del)_(cent|tel).txt$',
                                  full.names = T)
-  concat_background <- function(bfiles){
-    d <- data.frame()
-    for (f in bfiles)
-    {
-      df <- read.csv(f, sep="\t", header =T)
-      ampdel <- ifelse(grepl('_amp', f, fixed=TRUE), 'amp', 'del')
-      telcent <- ifelse(grepl('_tel', f, fixed=TRUE), 'tel', 'cent')
-      df['amp_del'] <- ampdel
-      df['tel_cent'] <- telcent
-      d <- rbind(d,df)
-    }
-    output <- d
-  }
-  breakpoints <- concat_background(breakpoint_files)
-  tel <- breakpoints[breakpoints$tel_cent=='tel', c('Sample', 'percent', 'start', 'end', 'amp_del')]
-  tel <- filter_big_small(tel, telcent_thres = telcent_thres)
-  cent <- breakpoints[breakpoints$tel_cent=='cent', c('Sample', 'percent', 'start', 'end', 'amp_del')]
-  cent <- filter_big_small(cent, telcent_thres = telcent_thres)
+  tmp = rbindlist(lapply(breakpoint_files, fread), idcol = 'file')
+  tmp[, fn := basename(breakpoint_files[file])]
+  tmp[, fn := sub('.*_(.+)_(del|amp)_(cent|tel)\\.txt$', '\\1_\\2_\\3', fn)]
+  tmp[, c('arm', 'amp_del', 'tel_cent') := tstrsplit(fn, '_')]
+  tel = filter_big_small(as.data.frame(tmp[tel_cent == 'tel', .(Sample, percent, start, end, amp_del, arm)]))
+  cent = filter_big_small(as.data.frame(tmp[tel_cent == 'cent', .(Sample, percent, start, end, amp_del, arm)]))
   return(list(tel = tel, cent = cent))
 }
+
+
 
 #' Get chromosome arms
 #' 

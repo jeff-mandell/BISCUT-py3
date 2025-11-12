@@ -1,7 +1,8 @@
-#' Prepare breakpoint files for BISCUT
+#' Calculate breakpoints for BISCUT
 #' 
 #' @param segment_file Copy number segmentation file path. See README for formatting details.
-#' @param output_dir Where to create an output directory and save breakpoint files.
+#' @param output_dir Optionally, write breakpoint files to a specified output directory. When NULL
+#'   (default), no files will be written.
 #' @param chromosome_coordinates The coordinates of p and q arms of the human chromosomes. By
 #'   default, hg19-based coordinates are used. Please note that these coordinates are not
 #'   biologically well-defined regions but rather what appeared to be the boundaries of regions that
@@ -19,9 +20,9 @@
 #' @param cores How many cores to use for processing chromosome arms in parallel. As always with the
 #'  \code{parallel} library, use of multiple cores is not supported on Windows systems.
 #' @export
-#' @return Returns NULL if breakpoint files are successfully written. Otherwise, attempts to return
-#'   error information.
-make_breakpoint_files = function(segment_file = NULL, output_dir = NULL, 
+#' @return When successful, a list of two breakpoint data.frames (telomeric and centromeric);
+#'   otherwise, attempts to return error information.
+calculate_breakpoints = function(segment_file = NULL, output_dir = NULL, 
                                  chromosome_coordinates = get_chromosome_coordinates(), 
                                  arms = get_chromosome_arms(),
                                  amplitude_threshold = .2,
@@ -38,6 +39,11 @@ make_breakpoint_files = function(segment_file = NULL, output_dir = NULL,
   
   
   # Validate choice of output directory
+  writing_output = ! is.null(output_dir)
+  if(is.null(output_dir)) {
+    output_dir = file.path(tempdir(), paste0(as.numeric(Sys.time()), '_breakpoints'))
+  }
+  
   if(! is.character(output_dir) || length(output_dir) != 1 || nchar(output_dir) == 0) {
     stop('output_dir should be 1-length character (specifically, a path where breakpoint files should be saved).')
   }
@@ -82,9 +88,11 @@ make_breakpoint_files = function(segment_file = NULL, output_dir = NULL,
   # To avoid confusion, arranging to delete all output if this function exits without finishing.
   finished_processing = FALSE
   on.exit({
-    if(! finished_processing) {
+    if(! finished_processing || ! writing_output) {
       unlink(output_dir, recursive = T)
-      message('Creating breakpoint files did not complete. Deleted incomplete output directory.')
+      if(writing_output) {
+        message('Creating breakpoint files did not complete. Deleted incomplete output directory.')
+      }
     }
   })
   output_dir = normalizePath(output_dir)
@@ -117,8 +125,15 @@ make_breakpoint_files = function(segment_file = NULL, output_dir = NULL,
     warning('For some reason, creation of some or all breakpoint files failed.\nDeleted incomplete output directory.')
     return(which_failed)
   }
+  bp = load_breakpoint_files(output_dir, telcent_thres = 0) # load complete files
   finished_processing = TRUE
-  message('Breakpoint files created.')
+  message('Done.')
+  if(writing_output) {
+    return(invisible(bp))
+  } else {
+    return(bp)
+  }
+  
 }
 
 

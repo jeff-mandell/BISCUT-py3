@@ -1,7 +1,7 @@
 #' Apply BISCUT method to one chromosome arm amp/del tel/cent
 #' 
 #' @keywords internal
-do_arm_gistic <- function(arm, direc, telcent, mode, ci,qval_thres, telcent_thres, breakpoint_file_dir, n,
+do_arm_gistic <- function(arm, direc, telcent, mode, ci,qval_thres, telcent_thres, probes, n,
                           emp_bg, abslocs, genelocs, seed = NULL) {
   if(! is.null(seed)) {
     set.seed(seed)
@@ -55,18 +55,6 @@ do_arm_gistic <- function(arm, direc, telcent, mode, ci,qval_thres, telcent_thre
     return(tabs)
   }
   
-  curr_file_pattern = paste0('_', arm, '_', direc, '_', telcent, '.txt$')
-  probefilename = list.files(path = breakpoint_file_dir, 
-                             pattern = curr_file_pattern,
-                             full.names = TRUE)
-  if(length(probefilename) > 1) {
-    stop('Unexpectedly found more than one file ending in ', curr_file_pattern, ' in breakpoint_file_dir.')
-  } else if (length(probefilename) == 0) {
-    stop('Could not find breakpoint file ending in ', curr_file_pattern, ' in breakpoint_file_dir.')
-  }
-  probes <- read.table(probefilename,sep='\t',header=T,stringsAsFactors = F,fill=T)
-  probes <- filter_big_small(probes, telcent_thres = telcent_thres)
-  
   if(nrow(probes) == 0) {
     return(list(list(), list())) # return empty if no segments are present, as there can't be any peaks
   }
@@ -78,12 +66,7 @@ do_arm_gistic <- function(arm, direc, telcent, mode, ci,qval_thres, telcent_thre
   alpha = summary(betafit)$estimate[1]
   beta = summary(betafit)$estimate[2]
   
-  # Read in file again
-  df <- read.table(probefilename,sep='\t',header=T,stringsAsFactors = F,fill=T)
-  df$percent = as.numeric(df$percent)
-  
-  df1 <-df
-  df1 <- filter_big_small(df1, telcent_thres = telcent_thres)
+  df1 <- as.data.frame(probes)
   
   ## if there's a coverage desert, spread the breakpoints until the next PROBE.
   tabs <- tablify(df1,chromosome,pq,telcent,T)
