@@ -14,7 +14,8 @@ calculate_breakpoints(
 )
 }
 \arguments{
-\item{segment_file}{Copy number segmentation file path. See README for formatting details.}
+\item{segment_file}{Copy number segmentation file path. Alternatively, a data.table with
+equivalent formatting. See README for formatting details.}
 
 \item{output_dir}{Optionally, write breakpoint files to a specified output directory. When NULL
 (default), no files will be written.}

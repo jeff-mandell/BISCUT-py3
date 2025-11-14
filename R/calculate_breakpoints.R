@@ -1,6 +1,7 @@
 #' Calculate breakpoints for BISCUT
 #' 
-#' @param segment_file Copy number segmentation file path. See README for formatting details.
+#' @param segment_file Copy number segmentation file path. Alternatively, a data.table with
+#'   equivalent formatting. See README for formatting details.
 #' @param output_dir Optionally, write breakpoint files to a specified output directory. When NULL
 #'   (default), no files will be written.
 #' @param chromosome_coordinates The coordinates of p and q arms of the human chromosomes. By
@@ -28,6 +29,12 @@ calculate_breakpoints = function(segment_file = NULL, output_dir = NULL,
                                  amplitude_threshold = .2,
                                  cores = 1) {
   
+  tmp_segment_file = NULL
+  if(is.data.table(segment_file)) {
+    tmp_segment_file = file.path(tempdir(), paste0(as.numeric(Sys.time()), '_biscut_segments.txt'))
+    fwrite(segment_file, file = tmp_segment_file, sep = "\t")
+    segment_file = tmp_segment_file
+  }
   
   if(! is.character(segment_file) || length(segment_file) != 1) {
     stop('segment_file should be 1-length character (specifying the copy number segementation file)')
@@ -127,6 +134,10 @@ calculate_breakpoints = function(segment_file = NULL, output_dir = NULL,
   }
   bp = load_breakpoint_files(output_dir, telcent_thres = 0) # load complete files
   finished_processing = TRUE
+
+  if(! is.null(tmp_segment_file)) {
+    unlink(tmp_segment_file)
+  }
   message('Done.')
   if(writing_output) {
     return(invisible(bp))
