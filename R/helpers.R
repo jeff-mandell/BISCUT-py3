@@ -29,8 +29,8 @@ load_breakpoint_files = function(breakpoint_file_dir, telcent_thres = 1e-3) {
   tmp[, fn := basename(breakpoint_files[file])]
   tmp[, fn := sub('.*_(.+)_(del|amp)_(cent|tel)\\.txt$', '\\1_\\2_\\3', fn)]
   tmp[, c('arm', 'amp_del', 'tel_cent') := tstrsplit(fn, '_')]
-  tel = filter_big_small(as.data.frame(tmp[tel_cent == 'tel', .(Sample, percent, start, end, amp_del, arm)]))
-  cent = filter_big_small(as.data.frame(tmp[tel_cent == 'cent', .(Sample, percent, start, end, amp_del, arm)]))
+  tel = filter_big_small(as.data.frame(tmp[tel_cent == 'tel', .(Sample, arm, amp_del, percent, start, end, startpos, endpos)]))
+  cent = filter_big_small(as.data.frame(tmp[tel_cent == 'cent', .(Sample, arm, amp_del, percent, start, end, startpos, endpos)]))
   return(list(tel = tel, cent = cent))
 }
 

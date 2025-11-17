@@ -357,7 +357,7 @@ do_biscut = function(breakpoints, results_dir = NULL, use_precalculated_backgrou
   }
   
   run_info = list(ci = ci, n_bootstrap = n_bootstrap, qval_thres = qval_thres, telcent_thres = telcent_thres,
-                  abslocs = abslocs)
+                  abslocs = abslocs, chromosome_coordinates = chromosome_coordinates)
   finished_processing = TRUE
   return(invisible(list(peaks = peak_info, genes_by_peak = genes_by_peak, 
                         background_fits = fit_by_type, peak_plot_data = peak_plot_data,
