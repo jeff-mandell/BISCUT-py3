@@ -39,7 +39,7 @@ def preprocess_arm(arm, output_prefix, aneu, segment_file, output_dir, chr_info,
 
     psedftel.to_csv(output_dir + '/' + output_prefix + '_' + arm + '_' + aneu +'_tel'+ '.txt', sep='\t')
     psedfcent.to_csv(output_dir + '/' + output_prefix + '_' + arm + '_' + aneu +'_cent'+ '.txt', sep='\t')
-    print('Finished arm ' + arm + '.')
+    print('Finished arm ' + arm + ' (' + aneu + ')' + '.')
     return True # avoid returning NULL for the sake of mclapply
 
 

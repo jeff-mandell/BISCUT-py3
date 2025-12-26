@@ -1,3 +1,3 @@
 .onLoad <- function(libname, pkgname) {
-  reticulate::configure_environment(pkgname)
+  reticulate::py_require(c("pandas", "numpy"))
 }

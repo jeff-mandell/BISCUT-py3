@@ -93,23 +93,26 @@ do_biscut = function(breakpoints, results_dir = NULL, use_precalculated_backgrou
     "or a directory of breakpoint files produced by the same function.")
   }
   
+  if(using_breakpoint_dir) {
+    # Already did filter_big_small on load
+    tel_bp = breakpoints$tel
+    cent_bp = breakpoints$cent
+  } else {
+    tel_bp = filter_big_small(breakpoints$tel, telcent_thres = telcent_thres)
+    cent_bp = filter_big_small(breakpoints$cent, telcent_thres = telcent_thres)
+  }
+  
   if (use_precalculated_background) {
     tel = filter_big_small(default_background_data$tel, telcent_thres)
     cent = filter_big_small(default_background_data$cent, telcent_thres)
   } else {
-    if (using_breakpoint_dir) {
-      # Already did filter_big_small on load
-      tel = breakpoints$tel
-      cent = breakpoints$cent
-    } else {
-      tel = filter_big_small(breakpoints$tel, telcent_thres = telcent_thres)
-      cent = filter_big_small(breakpoints$cent, telcent_thres = telcent_thres)
-    }
+    tel = tel_bp
+    cent = cent_bp
+    tel$arm = NULL
+    cent$arm = NULL
   }
   
-  probes = rbindlist(list(tel = tel, cent = cent), idcol = 'telcent')[order(arm, telcent, amp_del, percent)]
-  tel$arm = NULL
-  cent$arm = NULL
+  probes = rbindlist(list(tel = tel_bp, cent = cent_bp), idcol = 'telcent')[order(arm, telcent, amp_del, percent)]
   
   
   
@@ -172,7 +175,6 @@ do_biscut = function(breakpoints, results_dir = NULL, use_precalculated_backgrou
     stop('Could not create results_dir.')
   }
   results_dir = normalizePath(results_dir)
-
   
   finished_processing = FALSE
   on.exit({
@@ -185,7 +187,6 @@ do_biscut = function(breakpoints, results_dir = NULL, use_precalculated_backgrou
       
     }
   })
-  
   
   # Advise regarding cores option
   if(cores == 1 && max_cores > 1 && length(arms) > 1) {
@@ -240,6 +241,22 @@ do_biscut = function(breakpoints, results_dir = NULL, use_precalculated_backgrou
   peak_plot_data = peak_plot_data[! sapply(peak_plot_data, is.null)] # When a valid peak isn't found, there's no plot data
   results = rbindlist(lapply(results, '[[', 1))
 
+  # If now peaks found, replace empty (NULL) results table with template.
+  if(results[, .N] == 0) {
+    results = data.table(Chr = integer(0), Start = numeric(0), End = numeric(0), 
+               Cytoband = character(0), Gene = character(0), RefSeqName = character(0), 
+               Start.1 = numeric(0), End.1 = numeric(0), ks_stat = numeric(0), 
+               ks_p = numeric(0), log10_ks_p = numeric(0), n_events = integer(0), 
+               Peak.Start = numeric(0), Peak.End = numeric(0), Peak.Start.1 = numeric(0), 
+               Peak.End.1 = numeric(0), arm = character(0), direction = character(0), 
+               telcent = character(0), negpos = character(0), iter = numeric(0), 
+               conf = numeric(0), n_right = integer(0), n_left = integer(0), 
+               peak_id = character(0), parent = character(0), code = character(0), 
+               Peak.Position.1 = numeric(0), Peak.Position = numeric(0), 
+               search_lowlim = numeric(0), search_highlim = numeric(0))
+  }
+  
+  
   # Produce a single file of p-values, KS_pvalues (keeping original column names for this file)
   pvalues = unique(results[, .(peak_id, one_samp_p = ks_p, ks_stat)])
   pvalues[, by := p.adjust(one_samp_p, method = 'BY')]
@@ -317,7 +334,12 @@ do_biscut = function(breakpoints, results_dir = NULL, use_precalculated_backgrou
   calc_overlaps(results_dir, genelocs)
   
   # Get the overlap information for inclusion in returned results
-  overlapping_peaks = fread(file.path(results_dir, 'BISCUT_overlapping_peaks.txt'))
+  overlapping_peak_file = file.path(results_dir, 'BISCUT_overlapping_peaks.txt')
+  if(file.exists(overlapping_peak_file)) {
+    overlapping_peaks = fread(overlapping_peak_file)
+  } else {
+    overlapping_peaks = data.table()
+  }
   
   # Write arm-level data for "figure 2"-style plotting (unsure if the actual plotting code is working as intended)
   if(writing_results) {
@@ -334,27 +356,32 @@ do_biscut = function(breakpoints, results_dir = NULL, use_precalculated_backgrou
   peak_info$ks_p = NULL # keeping log10_ks_p (which is actually -1 * log10(ks_p))
   
   # Prepare a wide-formatted output file
-  for_wide = copy(peak_info)
-  for_wide[genes_by_peak, cytoband := Cytoband, on = 'peak_id']
-  for_wide = for_wide[, .(peak_id, cytoband, peak_location = peak_interval,
-                    combined_sig, log10_ksby, ks_stat,
-                    n_events, direction, telcent, selection = negpos,
-                    code, `TS or onco-like` = type_of_selection)]
-  column_names = c(names(for_wide), 'genes')
-  peaks_to_gene = genes_by_peak[, .(gene = list(Gene)), by = 'peak_id']
-  
-  tmp = lapply(apply(for_wide, 1, as.list), function(x) unlist(unname(c(x, 
-                                                                    as.list(peaks_to_gene[peak_id == x$peak_id, gene])))))
-  req_length = max(sapply(tmp, length))
-  tmp2 = as.data.table(lapply(tmp, function(x) c(x, rep(NA, req_length - length(x)))))
-  tmp3 = setnames(tmp2[2:.N, -"V1"], new = unlist(tmp2[1, -"V1"]))
-  final_column_names = c(setdiff(column_names, 'peak_id'), rep(NA, req_length - length(column_names)))
-  wide = cbind(final_column_names, tmp3)
-  setnames(wide, 'final_column_names', 'peak_id')
-  
-  if(writing_results) {
-    fwrite(wide, file = file.path(results_dir, 'all_BISCUT_results_cols.txt'), sep = "\t")
+  if(results[, .N] > 0) {
+    for_wide = copy(peak_info)
+    for_wide[genes_by_peak, cytoband := Cytoband, on = 'peak_id']
+    for_wide = for_wide[, .(peak_id, cytoband, peak_location = peak_interval,
+                            combined_sig, log10_ksby, ks_stat,
+                            n_events, direction, telcent, selection = negpos,
+                            code, `TS or onco-like` = type_of_selection)]
+    column_names = c(names(for_wide), 'genes')
+    peaks_to_gene = genes_by_peak[, .(gene = list(Gene)), by = 'peak_id']
+    
+    tmp = lapply(apply(for_wide, 1, as.list), function(x) unlist(unname(c(x, 
+                                                                          as.list(peaks_to_gene[peak_id == x$peak_id, gene])))))
+    req_length = max(sapply(tmp, length))
+    tmp2 = as.data.table(lapply(tmp, function(x) c(x, rep(NA, req_length - length(x)))))
+    tmp3 = setnames(tmp2[2:.N, -"V1"], new = unlist(tmp2[1, -"V1"]))
+    final_column_names = c(setdiff(column_names, 'peak_id'), rep(NA, req_length - length(column_names)))
+    wide = cbind(final_column_names, tmp3)
+    setnames(wide, 'final_column_names', 'peak_id')
+    
+    if(writing_results) {
+      fwrite(wide, file = file.path(results_dir, 'all_BISCUT_results_cols.txt'), sep = "\t")
+    }
+  } else {
+    wide = data.table()
   }
+  
   
   run_info = list(ci = ci, n_bootstrap = n_bootstrap, qval_thres = qval_thres, telcent_thres = telcent_thres,
                   abslocs = abslocs, chromosome_coordinates = chromosome_coordinates)

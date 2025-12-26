@@ -22,7 +22,7 @@ Imports:
     lifecycle,
     methods,
     pbapply,
-    reticulate,
+    reticulate (>= 1.41),
     rlang,
     stats,
     stringr,
@@ -31,10 +31,3 @@ Imports:
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
-Config/reticulate:
-  list(
-    packages = list(
-      list(package = "pandas"),
-      list(package = "numpy")
-    )
-  )
